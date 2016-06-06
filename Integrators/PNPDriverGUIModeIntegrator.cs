@@ -66,7 +66,10 @@ namespace IntegrateDrv.Integrators
 				var relativeDirectoryPath = relativeFilePath.Substring(0, relativeFilePath.Length - fileName.Length);
 
 				// we need to copy the files to the proper sub-directories
-				_installation.CopyFileToSetupDriverDirectory(DriverDirectory.Path + relativeDirectoryPath + fileName, HardwareID + @"\" + relativeDirectoryPath, fileName);
+				var sourceDir = DriverDirectory.Path + relativeDirectoryPath;
+				var pathParts = sourceDir.Split(new[] {Path.DirectorySeparatorChar}, StringSplitOptions.RemoveEmptyEntries);
+				var destinationDir = pnpDriverInf.ClassName + '\\' + pathParts[pathParts.Length - 1] + relativeDirectoryPath + Path.DirectorySeparatorChar;
+				_installation.CopyFileToSetupDriverDirectory(sourceDir + fileName, destinationDir, fileName);
 
 				var sourceDirectoryInMediaRootForm = _installation.GetSourceDriverDirectoryInMediaRootForm(HardwareID + @"\" + relativeDirectoryPath); // note that we may violate ISO9660 - & is not allowed
 				var sourceDiskID = _installation.TextSetupInf.AllocateSourceDiskID(_installation.ArchitectureIdentifier, sourceDirectoryInMediaRootForm);
@@ -88,11 +91,17 @@ namespace IntegrateDrv.Integrators
 			}
 
 			// set inf to boot start:
-			var setupDriverDirectoryPath = _installation.GetSetupDriverDirectoryPath(HardwareID + @"\"); // note that we may violate ISO9660 - & character is not allowed
-			var installSectionName = pnpDriverInf.GetDeviceInstallSectionName(HardwareID, _installation.ArchitectureIdentifier, _installation.MinorOSVersion, _installation.ProductType);
-			pnpDriverInf.SetServiceToBootStart(installSectionName, _installation.ArchitectureIdentifier, _installation.MinorOSVersion);
-			pnpDriverInf.SaveToDirectory(setupDriverDirectoryPath);
-			// finished setting inf to boot start
+			{
+				var sourceDir = DriverDirectory.Path;
+				var pathParts = sourceDir.Split(new[] {Path.DirectorySeparatorChar}, StringSplitOptions.RemoveEmptyEntries);
+				var destinationDir = pnpDriverInf.ClassName + '\\' + pathParts[pathParts.Length - 1];
+
+				var setupDriverDirectoryPath = _installation.GetSetupDriverDirectoryPath(destinationDir + Path.DirectorySeparatorChar);
+				var installSectionName = pnpDriverInf.GetDeviceInstallSectionName(HardwareID, _installation.ArchitectureIdentifier, _installation.MinorOSVersion, _installation.ProductType);
+				pnpDriverInf.SetServiceToBootStart(installSectionName, _installation.ArchitectureIdentifier, _installation.MinorOSVersion);
+				pnpDriverInf.SaveToDirectory(setupDriverDirectoryPath);
+				// finished setting inf to boot start
+			}
 		}
 
 		protected override void SetCurrentControlSetRegistryKey(string keyName, string valueName, RegistryValueKind valueKind, object valueData)

@@ -6,10 +6,10 @@ namespace IntegrateDrv.WindowsDirectory
 {
 	public class WindowsInstallation
 	{
-		private const string ScsiDriversSourceDirectory = "SCSIDRV\\";
+		private const string ScsiDriversSourceDirectory = "DRIVERS\\";
 			// this is where the files will reside in the local source directory
 
-		private const string ScsiDriversDestinationDirectory = "TEMP\\SCSIDRV\\";
+		private const string ScsiDriversDestinationDirectory = "SYSTEM32\\Driver Cache\\i386\\";
 			// this is where the files will reside during windows GUI setup phase
 
 		private readonly string _localSourceDirectory = string.Empty;
@@ -180,7 +180,7 @@ namespace IntegrateDrv.WindowsDirectory
 		}
 
 		/// <summary>
-		/// Media root has the form of \i386\SCSIDRV\BUSDRV
+		/// Media root has the form of \i386\DRIVERS\BUSDRV
 		/// </summary>
 		/// /// <param name="relativeDriverDirectoryPath">Source driver directory relative to \Windows</param>
 		public string GetSourceDriverDirectoryInMediaRootForm(string relativeDriverDirectoryPath)
@@ -192,7 +192,7 @@ namespace IntegrateDrv.WindowsDirectory
 		}
 
 		/// <summary>
-		/// has the form of TEMP\SCSIDRV\BUSDRV
+		/// has the form of Driver Cache\i386\
 		/// </summary>
 		/// <param name="relativeDriverDirectoryPath">Target driver directory relative to \Windows</param>
 		public string GetDriverDestinationWinntDirectory(string relativeDriverDirectoryPath)

@@ -12,10 +12,12 @@ namespace IntegrateDrv.Integrators
 {
 	public static class PNPDriverIntegratorUtils
 	{
-		private static string UISelectHardwareID(PNPDriverDirectory pnpDriverDirectory, WindowsInstallation installation, bool useLocalHardwareConfig, string enumExportPath)
+		private static List<string> UISelectHardwareID(PNPDriverDirectory pnpDriverDirectory, WindowsInstallation installation,
+			bool useLocalHardwareConfig, string enumExportPath)
 		{
-			string hardwareID;
-			var containsRootDevices = pnpDriverDirectory.ContainsRootDevices(installation.ArchitectureIdentifier, installation.MinorOSVersion, installation.ProductType);
+			var hardwareIDs = new List<string>();
+			var containsRootDevices = pnpDriverDirectory.ContainsRootDevices(installation.ArchitectureIdentifier,
+				installation.MinorOSVersion, installation.ProductType);
 			// We should not use our detection mechanism if a driver directory contains a root device.
 			if (!containsRootDevices && (useLocalHardwareConfig || enumExportPath != string.Empty))
 			{
@@ -36,13 +38,19 @@ namespace IntegrateDrv.Integrators
 				}
 				Console.WriteLine();
 				Console.WriteLine("Looking for matching device drivers in directory '{0}':", pnpDriverDirectory.Path);
-				hardwareID = UISelectMatchingHardwareID(matchingDevices);
+				foreach (var device in matchingDevices)
+					hardwareIDs.Add(device.Key);
 			}
 			else
-				hardwareID = UISelectMatchingHardwareID(pnpDriverDirectory, installation.ArchitectureIdentifier,
-					installation.MinorOSVersion, installation.ProductType);
+			{
+				foreach (var device in pnpDriverDirectory.ListDevices(
+					installation.ArchitectureIdentifier,
+					installation.MinorOSVersion,
+					installation.ProductType))
+					hardwareIDs.Add(device.Key);
+			}
 
-			return hardwareID;
+			return hardwareIDs;
 		}
 
 		private static string UISelectMatchingHardwareID(PNPDriverDirectory driverDirectory, string architectureIdentifier, int minorOSVersion, int productType)
@@ -97,19 +105,26 @@ namespace IntegrateDrv.Integrators
 			var deviceServices = new List<BaseDeviceService>();
 			foreach (var pnpDriverDirectory in pnpDriverDirectories)
 			{
-				var hardwareID = UISelectHardwareID(pnpDriverDirectory, installation, useLocalHardwareConfig, enumExportPath);
-				
-				if (hardwareID == string.Empty)
-				{
+				var hardwareIDs = UISelectHardwareID(pnpDriverDirectory, installation, useLocalHardwareConfig, enumExportPath);
+
+				if (0 == hardwareIDs.Count)
 					// No device has been selected, exit.
 					// UISelectDeviceID has already printed an error message
 					Program.Exit();
-				}
 
-				Console.WriteLine("Integrating PNP driver for '" + hardwareID + "'");
-				var integrator = new PNPDriverIntegrator(pnpDriverDirectory, installation, hardwareID, useLocalHardwareConfig, enumExportPath, preconfigure);
-				integrator.IntegrateDriver();
-				deviceServices.AddRange(integrator.DeviceServices);
+				foreach (var hardwareID in hardwareIDs)
+				{
+					Console.WriteLine("Integrating PNP driver for '" + hardwareID + "'");
+					var integrator = new PNPDriverIntegrator(
+						pnpDriverDirectory,
+						installation,
+						hardwareID,
+						useLocalHardwareConfig,
+						enumExportPath,
+						preconfigure);
+					integrator.IntegrateDriver();
+					deviceServices.AddRange(integrator.DeviceServices);
+				}
 			}
 			return deviceServices;
 		}
