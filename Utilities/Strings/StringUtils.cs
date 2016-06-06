@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace IntegrateDrv.Utilities.Strings
 {
@@ -42,6 +43,25 @@ namespace IntegrateDrv.Utilities.Strings
 					return index;
 			}
 			return -1;
+		}
+
+		public static string ContainsRegex(IEnumerable<string> list, string value)
+		{
+			return ContainsRegex(list, value, RegexOptions.None);
+		}
+
+		public static string ContainsRegex(IEnumerable<string> list, string value, RegexOptions regexOptions)
+		{
+			value = string.Concat('^', value, '$');
+			foreach (var listValue in list)
+			{
+				var result = Regex.Match(listValue, value, regexOptions);
+				//if(Regex.IsMatch(listValue, value, regexOptions))
+				if(result.Success)
+					return result.Value;
+			}
+
+			return null;
 		}
 	}
 }

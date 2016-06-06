@@ -326,20 +326,29 @@ namespace IntegrateDrv.PNPDriver
 		/// </summary>
 		public List<string> GetInstallSectionNames(string installSectionName, string architectureIdentifier, int minorOSVersion)
 		{
+			// Make these regex-safe
+			installSectionName = installSectionName.Replace(@".", @"\.");
+			architectureIdentifier = architectureIdentifier.Replace(@".", @"\.");
+
 			// http://msdn.microsoft.com/en-us/library/ff547344%28v=vs.85%29.aspx
 			var result = new List<string>();
 			while (minorOSVersion >= 0)
 			{
-				var sectionName = string.Format("{0}.nt{1}.5", installSectionName, architectureIdentifier);
-				if (minorOSVersion != 0)
-					sectionName += "." + minorOSVersion;
-				result.Add(sectionName);
+				result.Add(
+					string.Format(@"{0}(\..+)?\.nt{1}\.5{2}",
+						installSectionName,
+						architectureIdentifier,
+						minorOSVersion != 0
+							? @"\." + minorOSVersion
+							: @""
+					)
+				);
 				minorOSVersion--;
 			}
-			
-			result.Add(installSectionName + ".nt" + architectureIdentifier);
-			result.Add(installSectionName + ".nt");
-			result.Add(installSectionName);
+
+			result.Add(string.Format(@"{0}(\..+)?\.nt{1}", installSectionName, architectureIdentifier));
+			result.Add(string.Format(@"{0}(\..+)?\.nt", installSectionName));
+			result.Add(string.Format(@"{0}", installSectionName));
 			return result;
 		}
 
@@ -348,8 +357,9 @@ namespace IntegrateDrv.PNPDriver
 			var installSectionNames = GetInstallSectionNames(installSectionName, architectureIdentifier, minorOSVersion);
 			foreach (var sectionName in installSectionNames)
 			{
-				if (StringUtils.ContainsCaseInsensitive(SectionNames, sectionName))
-					return sectionName;
+				var sectionResult = StringUtils.ContainsRegex(SectionNames, sectionName + @"\.Services", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+				if (!string.IsNullOrEmpty(sectionResult))
+					return sectionResult;
 			}
 			return string.Empty;
 		}
@@ -367,8 +377,9 @@ namespace IntegrateDrv.PNPDriver
 			var installSectionNames = GetInstallSectionNames(installSectionName, architectureIdentifier, minorOSVersion);
 			foreach (var sectionName in installSectionNames)
 			{
-				if (StringUtils.ContainsCaseInsensitive(SectionNames, sectionName + ".Services"))
-					return GetSection(sectionName + ".Services");
+				var sectionResult = StringUtils.ContainsRegex(SectionNames, sectionName + @"\.Services", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+				if(!string.IsNullOrEmpty(sectionResult))
+					return GetSection(sectionResult);
 			}
 
 			return new List<string>();
