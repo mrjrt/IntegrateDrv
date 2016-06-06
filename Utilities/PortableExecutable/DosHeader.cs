@@ -10,92 +10,95 @@
 using System;
 using System.IO;
 
-namespace Utilities
+namespace IntegrateDrv.Utilities.PortableExecutable
 {
-    public sealed class DosHeader
-    {
-        public const ushort DosSignature = 0x5a4d; // MZ
+	public sealed class DOSHeader
+	{
+		public const ushort DOSSignature = 0x5a4d; // MZ
 
-        public ushort BytesOnLastPage;
-        public ushort PageCount;
-        public ushort RelocationCount;
-        public ushort HeaderSize;
-        public ushort MinExtraParagraphs;
-        public ushort MaxExtraParagraphs;
-        public ushort InitialSS;
-        public ushort InitialSP;
-        public ushort Checksum;
-        public ushort InitialIP;
-        public ushort InitialCS;
-        public ushort RelocationTableOffset;
-        public ushort OverlayNumber;
-        public ushort OemID;
-        public ushort OemInfo;
-        public uint CoffHeaderOffset;
+		public ushort BytesOnLastPage;
+		public ushort PageCount;
+		public ushort RelocationCount;
+		public ushort HeaderSize;
+		public ushort MinExtraParagraphs;
+		public ushort MaxExtraParagraphs;
+		public ushort InitialSS;
+		public ushort InitialSP;
+		public ushort Checksum;
+		public ushort InitialIP;
+		public ushort InitialCS;
+		public ushort RelocationTableOffset;
+		public ushort OverlayNumber;
+		public ushort OemID;
+		public ushort OemInfo;
+		public uint CoffHeaderOffset;
 
-        public static DosHeader Parse(BinaryReader reader)
-        {
-            ushort signature = reader.ReadUInt16();
-            if (DosSignature != signature)
-            {
-                throw new Exception("Invalid Dos header signature");
-            }
+		public static DOSHeader Parse(BinaryReader reader)
+		{
+			var signature = reader.ReadUInt16();
+			if (DOSSignature != signature)
+				throw new Exception("Invalid DOS header signature");
 
-            DosHeader header = new DosHeader();
+			var header = new DOSHeader
+			{
+				BytesOnLastPage = reader.ReadUInt16(),
+				PageCount = reader.ReadUInt16(),
+				RelocationCount = reader.ReadUInt16(),
+				HeaderSize = reader.ReadUInt16(),
+				MinExtraParagraphs = reader.ReadUInt16(),
+				MaxExtraParagraphs = reader.ReadUInt16(),
+				InitialSS = reader.ReadUInt16(),
+				InitialSP = reader.ReadUInt16(),
+				Checksum = reader.ReadUInt16(),
+				InitialIP = reader.ReadUInt16(),
+				InitialCS = reader.ReadUInt16(),
+				RelocationTableOffset = reader.ReadUInt16(),
+				OverlayNumber = reader.ReadUInt16()
+			};
 
-            header.BytesOnLastPage = reader.ReadUInt16();
-            header.PageCount = reader.ReadUInt16();
-            header.RelocationCount = reader.ReadUInt16();
-            header.HeaderSize = reader.ReadUInt16();
-            header.MinExtraParagraphs = reader.ReadUInt16();
-            header.MaxExtraParagraphs = reader.ReadUInt16();
-            header.InitialSS = reader.ReadUInt16();
-            header.InitialSP = reader.ReadUInt16();
-            header.Checksum = reader.ReadUInt16();
-            header.InitialIP = reader.ReadUInt16();
-            header.InitialCS = reader.ReadUInt16();
-            header.RelocationTableOffset = reader.ReadUInt16();
-            header.OverlayNumber = reader.ReadUInt16();
+			// reserved words
+			for (var i = 0; i < 4; i++)
+				reader.ReadUInt16();
 
-            // reserved words
-            for (int i = 0; i < 4; i++) reader.ReadUInt16();
+			header.OemID = reader.ReadUInt16();
+			header.OemInfo = reader.ReadUInt16();
 
-            header.OemID = reader.ReadUInt16();
-            header.OemInfo = reader.ReadUInt16();
+			// reserved words
+			for (var i = 0; i < 10; i++)
+				reader.ReadUInt16();
 
-            // reserved words
-            for (int i = 0; i < 10; i++) reader.ReadUInt16();
+			header.CoffHeaderOffset = reader.ReadUInt32();
 
-            header.CoffHeaderOffset = reader.ReadUInt32();
+			return header;
+		}
 
-            return header;
-        }
+		public void Write(BinaryWriter writer)
+		{
+			writer.Write(DOSSignature);
+			writer.Write(BytesOnLastPage);
+			writer.Write(PageCount);
+			writer.Write(RelocationCount);
+			writer.Write(HeaderSize);
+			writer.Write(MinExtraParagraphs);
+			writer.Write(MaxExtraParagraphs);
+			writer.Write(InitialSS);
+			writer.Write(InitialSP);
+			writer.Write(Checksum);
+			writer.Write(InitialIP);
+			writer.Write(InitialCS);
+			writer.Write(RelocationTableOffset);
+			writer.Write(OverlayNumber);
 
-        public void Write(BinaryWriter writer)
-        {
-            writer.Write(DosSignature);
-            writer.Write(BytesOnLastPage);
-            writer.Write(PageCount);
-            writer.Write(RelocationCount);
-            writer.Write(HeaderSize);
-            writer.Write(MinExtraParagraphs);
-            writer.Write(MaxExtraParagraphs);
-            writer.Write(InitialSS);
-            writer.Write(InitialSP);
-            writer.Write(Checksum);
-            writer.Write(InitialIP);
-            writer.Write(InitialCS);
-            writer.Write(RelocationTableOffset);
-            writer.Write(OverlayNumber);
+			// reserved words
+			for (var i = 0; i < 4; i++)
+				writer.Write((ushort)0);
+			writer.Write(OemID);
+			writer.Write(OemInfo);
 
-            // reserved words
-            for (int i = 0; i < 4; i++) writer.Write((ushort)0);
-            writer.Write(OemID);
-            writer.Write(OemInfo);
-
-            // reserved words
-            for (int i = 0; i < 10; i++) writer.Write((ushort)0);
-            writer.Write(CoffHeaderOffset);
-        }
-    }
+			// reserved words
+			for (var i = 0; i < 10; i++)
+				writer.Write((ushort)0);
+			writer.Write(CoffHeaderOffset);
+		}
+	}
 }

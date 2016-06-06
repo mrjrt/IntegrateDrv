@@ -1,18 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
+using IntegrateDrv.BaseClasses;
 
-namespace IntegrateDrv
+namespace IntegrateDrv.WindowsDirectory
 {
-    public class NetPacketSchedulerINFFile : ServiceINIFile
-    {
-        public NetPacketSchedulerINFFile() : base("netpschd.inf")
-        { 
-        }
+	public class NetPacketSchedulerINFFile : ServiceINIFile
+	{
+		public NetPacketSchedulerINFFile() : base("netpschd.inf")
+		{ 
+		}
 
-        public void SetPacketSchedulerToBootStart()
-        {
-            SetServiceToBootStart("PSched.AddService");
-        }
-    }
+		public void SetPacketSchedulerToBootStart()
+		{
+			SetServiceToBootStart("PSched.AddService");
+		}
+	}
 }

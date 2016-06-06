@@ -1,18 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
+using IntegrateDrv.BaseClasses;
 
-namespace IntegrateDrv
+namespace IntegrateDrv.WindowsDirectory
 {
-    public class UsbStorageClassDriverINFFile : ServiceINIFile
-    {
-        public UsbStorageClassDriverINFFile() : base("usbstor.inf")
-        {}
+	public class UsbStorageClassDriverINFFile : ServiceINIFile
+	{
+		public UsbStorageClassDriverINFFile() : base("usbstor.inf")
+		{}
 
-        public void SetUsbStorageClassDriverToBootStart()
-        {
-            SetServiceToBootStart("USBSTOR.AddService");
-            SetServiceLoadOrderGroup("USBSTOR.AddService", "Boot Bus Extender");
-        }
-    }
+		public void SetUsbStorageClassDriverToBootStart()
+		{
+			SetServiceToBootStart("USBSTOR.AddService");
+			SetServiceLoadOrderGroup("USBSTOR.AddService", "Boot Bus Extender");
+		}
+	}
 }

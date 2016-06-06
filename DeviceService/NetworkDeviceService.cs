@@ -1,25 +1,20 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace IntegrateDrv
+namespace IntegrateDrv.DeviceService
 {
-    public class NetworkDeviceService : DeviceService
-    {
-        private string m_netCfgInstanceID = String.Empty;
+	public class NetworkDeviceService : BaseDeviceService
+	{
+		private readonly string _netCfgInstanceID = string.Empty;
 
-        public NetworkDeviceService(string deviceDescription, string serviceName, string serviceDisplayName, string serviceGroup, int serviceType, int errorControl, string fileName, string imagePath, string netCfgInstanceID)
-            : base(deviceDescription, serviceName, serviceDisplayName, serviceGroup, serviceType, errorControl, fileName, imagePath)
-        {
-            m_netCfgInstanceID = netCfgInstanceID;
-        }
+		public NetworkDeviceService(string deviceDescription, string serviceName, string serviceDisplayName,
+			string serviceGroup, int serviceType, int errorControl, string fileName, string imagePath, string netCfgInstanceID)
+			: base(
+				deviceDescription, serviceName, serviceDisplayName, serviceGroup, serviceType, errorControl, fileName, imagePath)
+		{
+			_netCfgInstanceID = netCfgInstanceID;
+		}
 
-        public string NetCfgInstanceID
-        {
-            get
-            {
-                return m_netCfgInstanceID;
-            }
-        }
-    }
+		public string NetCfgInstanceID
+		{
+			get { return _netCfgInstanceID; }
+		}
+	}
 }

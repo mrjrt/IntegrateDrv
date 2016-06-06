@@ -1,125 +1,102 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using Utilities;
+using IntegrateDrv.Utilities.FileSystem;
 
-namespace IntegrateDrv
+namespace IntegrateDrv.PNPDriver
 {
-    public class PNPDriverDirectory
-    {
-        private string m_path = String.Empty;
-        private List<PNPDriverINFFile> m_infList;
-        List<KeyValuePair<string, string>> m_devices = null; // this include list of the devices from all the INFs in the directory
+	public class PNPDriverDirectory
+	{
+		private readonly string _path = string.Empty;
+		private readonly List<PNPDriverINFFile> _infList;
 
-        public PNPDriverDirectory(string path)
-        {
-            m_path = path;
-            
-            List<string> fileNames = GetINFFileNamesInDirectory(path);
-            m_infList = new List<PNPDriverINFFile>();
-            foreach (string fileName in fileNames)
-            {
-                PNPDriverINFFile driverInf = new PNPDriverINFFile(fileName);
-                driverInf.ReadFromDirectory(path);
-                m_infList.Add(driverInf);
-            }
-        }
+		private List<KeyValuePair<string, string>> _devices;
+			// this include list of the devices from all the INFs in the directory
 
-        public bool ContainsINFFiles
-        {
-            get
-            {
-                return (m_infList.Count > 0);
-            }
-        }
+		public PNPDriverDirectory(string path)
+		{
+			_path = path;
 
-        private static List<string> GetINFFileNamesInDirectory(string path)
-        { 
-            List<string> result = new List<string>();
-            string[] filePaths = new string[0];
-            try
-            {
-                filePaths = Directory.GetFiles(path, "*.inf");
-            }
-            catch (DirectoryNotFoundException)
-            {
+			var fileNames = GetINFFileNamesInDirectory(path);
+			_infList = new List<PNPDriverINFFile>();
+			foreach (var fileName in fileNames)
+			{
+				var driverInf = new PNPDriverINFFile(fileName);
+				driverInf.ReadFromDirectory(path);
+				_infList.Add(driverInf);
+			}
+		}
 
-            }
-            catch (ArgumentException) // such as "Path contains invalid chars"
-            {
-                
-            }
+		public bool ContainsINFFiles
+		{
+			get { return (_infList.Count > 0); }
+		}
 
-            foreach (string filePath in filePaths)
-            {
-                string fileName = FileSystemUtils.GetNameFromPath(filePath);
-                result.Add(fileName);
-            }
-            return result;
-        }
+		private static IEnumerable<string> GetINFFileNamesInDirectory(string path)
+		{
+			var result = new List<string>();
+			var filePaths = new string[0];
+			try
+			{
+				filePaths = Directory.GetFiles(path, "*.inf");
+			}
+			catch (DirectoryNotFoundException)
+			{
+			}
+			catch (ArgumentException) // such as "Path contains invalid chars"
+			{
+			}
 
-        public string GetDeviceInstallSectionName(string hardwareIDToFind, string architectureIdentifier, int minorOSVersion, int productType, out PNPDriverINFFile pnpDriverInf)
-        {
-            foreach (PNPDriverINFFile driverInf in m_infList)
-            {
-                string installSectionName = driverInf.GetDeviceInstallSectionName(hardwareIDToFind, architectureIdentifier, minorOSVersion, productType);
-                if (installSectionName != String.Empty)
-                {
-                    pnpDriverInf = driverInf;
-                    return installSectionName;
-                }
-            }
-            pnpDriverInf = null;
-            return String.Empty;
-        }
+			foreach (var filePath in filePaths)
+			{
+				var fileName = FileSystemUtils.GetNameFromPath(filePath);
+				result.Add(fileName);
+			}
+			return result;
+		}
 
-        public List<KeyValuePair<string, string>> ListDevices(string architectureIdentifier, int minorOSVersion, int productType)
-        {
-            if (m_devices == null)
-            {
-                m_devices = new List<KeyValuePair<string, string>>();
-                foreach (PNPDriverINFFile driverInf in m_infList)
-                {
-                    m_devices.AddRange(driverInf.ListDevices(architectureIdentifier, minorOSVersion, productType));
-                }
-            }
-            return m_devices;
-        }
+		public string GetDeviceInstallSectionName(string hardwareIDToFind, string architectureIdentifier, int minorOSVersion,
+			int productType, out PNPDriverINFFile pnpDriverInf)
+		{
+			foreach (var driverInf in _infList)
+			{
+				var installSectionName = driverInf.GetDeviceInstallSectionName(hardwareIDToFind, architectureIdentifier,
+					minorOSVersion, productType);
+				if (installSectionName != string.Empty)
+				{
+					pnpDriverInf = driverInf;
+					return installSectionName;
+				}
+			}
+			pnpDriverInf = null;
+			return string.Empty;
+		}
 
-        public bool ContainsRootDevices(string architectureIdentifier, int minorOSVersion, int productType)
-        {
-            foreach (PNPDriverINFFile driverInf in m_infList)
-            {
-                if (driverInf.ContainsRootDevices(architectureIdentifier, minorOSVersion, productType))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+		public List<KeyValuePair<string, string>> ListDevices(string architectureIdentifier, int minorOSVersion,
+			int productType)
+		{
+			if (_devices == null)
+			{
+				_devices = new List<KeyValuePair<string, string>>();
+				foreach (var driverInf in _infList)
+					_devices.AddRange(driverInf.ListDevices(architectureIdentifier, minorOSVersion, productType));
+			}
+			return _devices;
+		}
 
-        public bool ContainsNetworkAdapter
-        {
-            get
-            {
-                foreach (PNPDriverINFFile driverInf in m_infList)
-                {
-                    if (driverInf.IsNetworkAdapter)
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        }
+		public bool ContainsRootDevices(string architectureIdentifier, int minorOSVersion, int productType)
+		{
+			foreach (var driverInf in _infList)
+			{
+				if (driverInf.ContainsRootDevices(architectureIdentifier, minorOSVersion, productType))
+					return true;
+			}
+			return false;
+		}
 
-        public string Path
-        {
-            get
-            {
-                return m_path;
-            }
-        }
-    }
+		public string Path
+		{
+			get { return _path; }
+		}
+	}
 }

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.50727</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{9229C10D-736A-467A-B69D-AE2E961703AC}</ProjectGuid>
     <OutputType>Exe</OutputType>
@@ -45,31 +45,7 @@
     <Compile Include="Interfaces\ISystemRegistryHive.cs" />
     <Compile Include="BaseClasses\ServiceINIFile.cs" />
     <Compile Include="BasicPackStreamContext.cs" />
-    <Compile Include="Compression.Cab\CabEngine.cs" />
-    <Compile Include="Compression.Cab\CabException.cs" />
-    <Compile Include="Compression.Cab\CabFileInfo.cs" />
-    <Compile Include="Compression.Cab\CabInfo.cs" />
-    <Compile Include="Compression.Cab\CabPacker.cs" />
-    <Compile Include="Compression.Cab\CabUnpacker.cs" />
-    <Compile Include="Compression.Cab\CabWorker.cs" />
-    <Compile Include="Compression.Cab\HandleManager.cs" />
-    <Compile Include="Compression.Cab\NativeMethods.cs" />
-    <Compile Include="Compression\ArchiveException.cs" />
-    <Compile Include="Compression\ArchiveFileInfo.cs" />
-    <Compile Include="Compression\ArchiveFileStreamContext.cs" />
-    <Compile Include="Compression\ArchiveInfo.cs" />
-    <Compile Include="Compression\ArchiveProgressEventArgs.cs" />
-    <Compile Include="Compression\ArchiveProgressType.cs" />
-    <Compile Include="Compression\BasicUnpackStreamContext.cs" />
-    <Compile Include="Compression\CargoStream.cs" />
-    <Compile Include="Compression\CompressionEngine.cs" />
-    <Compile Include="Compression\CompressionLevel.cs" />
-    <Compile Include="Compression\DuplicateStream.cs" />
-    <Compile Include="Compression\IPackStreamContext.cs" />
-    <Compile Include="Compression\IUnpackStreamContext.cs" />
-    <Compile Include="Compression\OffsetStream.cs" />
-    <Compile Include="Compression\SafeNativeMethods.cs" />
-    <Compile Include="ExportedRegistry\ExportedRegistry.cs" />
+    <Compile Include="ExportedRegistry\ExportedRegistryINI.cs" />
     <Compile Include="Integrators\PNPDriverGUIModeIntegrator.cs" />
     <Compile Include="Integrators\KernelAndHalIntegrator.cs" />
     <Compile Include="HardwareDetectors\PNPExportedHardwareDetector.cs" />
@@ -126,15 +102,13 @@
     <Compile Include="WindowsDirectory\WindowsInstallation.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Compression.Cab\Errors.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Compression.Cab\Errors.resources">
-      <LogicalName>Microsoft.Deployment.Compression.Cab.Errors.resources</LogicalName>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="RevisionHistory.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Microsoft.Deployment.Compression\Microsoft.Deployment.Compression.csproj">
+      <Project>{E64E2430-3F1D-4489-A548-23B426B98173}</Project>
+      <Name>Microsoft.Deployment.Compression</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

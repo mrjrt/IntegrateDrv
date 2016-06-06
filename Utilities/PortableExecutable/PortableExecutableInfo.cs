@@ -1,233 +1,177 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using IntegrateDrv.Utilities.FileSystem;
 
-namespace Utilities
+namespace IntegrateDrv.Utilities.PortableExecutable
 {
-    public class PortableExecutableInfo
-    {
-        private DosHeader m_dosHeader;
-        private byte[] m_dosStubBytes; // Dos program stub is here ("This program cannot be run in DOS mode.")
-        private CoffHeader m_coffHeader;
-        private PEHeader m_peHeader;
-        private List<PESectionHeader> m_sectionHeaders = new List<PESectionHeader>();
-        private byte[] m_filler;
-        private List<byte[]> m_sections = new List<byte[]>();
-        private byte[] m_remainingBytes; // Digital signature is here
-        private uint m_peHeaderOffset;
+	public class PortableExecutableInfo
+	{
+		private byte[] _dosStubBytes; // DOS program stub is here ("This program cannot be run in DOS mode.")
+		private byte[] _filler;
+		private byte[] _remainingBytes; // Digital signature is here
 
-        ImportDirectory m_importDirectory;
-             
-        public PortableExecutableInfo(string path)
-        {
-            FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read);
-            BinaryReader reader = new BinaryReader(stream);
-            Parse(reader);
-            reader.Close(); // closes the underlying stream as well
-        }
+		public PortableExecutableInfo(string path)
+		{
+			Sections = new List<byte[]>();
+			SectionHeaders = new List<PESectionHeader>();
+			var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+			var reader = new BinaryReader(stream);
+			Parse(reader);
+			reader.Close(); // closes the underlying stream as well
+		}
 
-        public PortableExecutableInfo(byte[] fileBytes)
-        {
-            MemoryStream stream = new MemoryStream(fileBytes);
-            BinaryReader reader = new BinaryReader(stream);
-            Parse(reader);
-            reader.Close(); // closes the underlying stream as well
-        }
+		public PortableExecutableInfo(byte[] fileBytes)
+		{
+			Sections = new List<byte[]>();
+			SectionHeaders = new List<PESectionHeader>();
+			var stream = new MemoryStream(fileBytes);
+			var reader = new BinaryReader(stream);
+			Parse(reader);
+			reader.Close(); // closes the underlying stream as well
+		}
 
-        public void Parse(BinaryReader reader)
-        {
-            m_dosHeader = DosHeader.Parse(reader);
-            int dosStubSize = (int)(m_dosHeader.CoffHeaderOffset - reader.BaseStream.Position);
-            m_dosStubBytes = reader.ReadBytes(dosStubSize);
-            m_coffHeader = CoffHeader.Parse(reader);
-            m_peHeaderOffset = (uint)reader.BaseStream.Position;
-            m_peHeader = PEHeader.Parse(reader);
+		public void Parse(BinaryReader reader)
+		{
+			DOSHeader = DOSHeader.Parse(reader);
+			var dosStubSize = (int) (DOSHeader.CoffHeaderOffset - reader.BaseStream.Position);
+			_dosStubBytes = reader.ReadBytes(dosStubSize);
+			COFFHeader = COFFHeader.Parse(reader);
+			PEHeaderOffset = (uint) reader.BaseStream.Position;
+			PEHeader = PEHeader.Parse(reader);
 
-            for (int i = 0; i < m_coffHeader.NumberOfSections; i++)
-            {
-                m_sectionHeaders.Add(PESectionHeader.Parse(reader));
-            }
+			for (var i = 0; i < COFFHeader.NumberOfSections; i++)
+				SectionHeaders.Add(PESectionHeader.Parse(reader));
 
-            int fillerSize = (int)(m_sectionHeaders[0].PointerToRawData - reader.BaseStream.Position);
-            m_filler = reader.ReadBytes(fillerSize);
-            
-            for (int i = 0; i < m_coffHeader.NumberOfSections; i++)
-            {
-                byte[] sectionBytes = reader.ReadBytes((int)m_sectionHeaders[i].SizeOfRawData);
-                m_sections.Add(sectionBytes);
-            }
+			var fillerSize = (int) (SectionHeaders[0].PointerToRawData - reader.BaseStream.Position);
+			_filler = reader.ReadBytes(fillerSize);
 
-            int remainingByteCount = (int)(reader.BaseStream.Length - reader.BaseStream.Position);
-            m_remainingBytes = reader.ReadBytes(remainingByteCount);
-            // file ends here
+			for (var i = 0; i < COFFHeader.NumberOfSections; i++)
+			{
+				var sectionBytes = reader.ReadBytes((int) SectionHeaders[i].SizeOfRawData);
+				Sections.Add(sectionBytes);
+			}
 
-            // Parse Import Directory:
-            PEDataDirectory importDirectoryEntry = m_peHeader.DataDirectories[(int)DataDirectoryName.Import];
-            if (importDirectoryEntry.VirtualAddress > 0)
-            {
-                uint importDirectoryFileOffset = GetOffsetFromRVA(importDirectoryEntry.VirtualAddress);
-                reader.BaseStream.Seek(importDirectoryFileOffset, SeekOrigin.Begin);
-                m_importDirectory = ImportDirectory.Parse(reader);
-            }
-        }
+			var remainingByteCount = (int) (reader.BaseStream.Length - reader.BaseStream.Position);
+			_remainingBytes = reader.ReadBytes(remainingByteCount);
+			// file ends here
 
-        public void WritePortableExecutable(BinaryWriter writer)
-        {
-            writer.BaseStream.Seek(0, SeekOrigin.Begin);
-            m_dosHeader.Write(writer);
-            writer.Write(m_dosStubBytes);
-            m_coffHeader.Write(writer);
-            m_peHeaderOffset = (uint)writer.BaseStream.Position;
-            m_peHeader.Write(writer);
-            for (int i = 0; i < m_coffHeader.NumberOfSections; i++)
-            {
-                m_sectionHeaders[i].Write(writer);
-            }
+			// Parse Import Directory:
+			var importDirectoryEntry = PEHeader.DataDirectories[(int) DataDirectoryName.Import];
+			if (importDirectoryEntry.VirtualAddress > 0)
+			{
+				var importDirectoryFileOffset = GetOffsetFromRVA(importDirectoryEntry.VirtualAddress);
+				reader.BaseStream.Seek(importDirectoryFileOffset, SeekOrigin.Begin);
+				ImportDirectory = ImportDirectory.Parse(reader);
+			}
+		}
 
-            writer.Write(m_filler);
-            for (int i = 0; i < m_coffHeader.NumberOfSections; i++)
-            {
-                writer.Write(m_sections[i]);
-            }
+		public void WritePortableExecutable(BinaryWriter writer)
+		{
+			writer.BaseStream.Seek(0, SeekOrigin.Begin);
+			DOSHeader.Write(writer);
+			writer.Write(_dosStubBytes);
+			COFFHeader.Write(writer);
+			PEHeaderOffset = (uint) writer.BaseStream.Position;
+			PEHeader.Write(writer);
+			for (var i = 0; i < COFFHeader.NumberOfSections; i++)
+				SectionHeaders[i].Write(writer);
 
-            writer.Write(m_remainingBytes);
-            
-            // Write Import Directory:
-            PEDataDirectory importDirectoryEntry = m_peHeader.DataDirectories[(int)DataDirectoryName.Import];
-            if (importDirectoryEntry.VirtualAddress > 0)
-            {
-                uint importDirectoryFileOffset = GetOffsetFromRVA(importDirectoryEntry.VirtualAddress);
-                writer.Seek((int)importDirectoryFileOffset, SeekOrigin.Begin);
-                m_importDirectory.Write(writer);
-            }
+			writer.Write(_filler);
+			for (var i = 0; i < COFFHeader.NumberOfSections; i++)
+				writer.Write(Sections[i]);
 
-            // Update PE checksum:
-            writer.Seek(0, SeekOrigin.Begin);
-            byte[] fileBytes = new byte[writer.BaseStream.Length];
-            writer.BaseStream.Read(fileBytes, 0, (int)writer.BaseStream.Length);
-            uint checksumOffset = m_peHeaderOffset + PEHeader.ChecksumRelativeAddress;
-            uint checksum = PortableExecutableUtils.CalculcateChecksum(fileBytes, checksumOffset);
-            writer.Seek((int)checksumOffset, SeekOrigin.Begin);
-            writer.Write(checksum);
-            writer.Flush();
-        }
+			writer.Write(_remainingBytes);
 
-        public PESectionHeader FindSectionByRVA(uint rva)
-        {
-            for (int i = 0; i < m_sectionHeaders.Count; i++)
-            {
-                uint sectionStart = m_sectionHeaders[i].VirtualAdress;
-                uint sectionEnd = sectionStart + m_sectionHeaders[i].VirtualSize;
+			// Write Import Directory:
+			var importDirectoryEntry = PEHeader.DataDirectories[(int) DataDirectoryName.Import];
+			if (importDirectoryEntry.VirtualAddress > 0)
+			{
+				var importDirectoryFileOffset = GetOffsetFromRVA(importDirectoryEntry.VirtualAddress);
+				writer.Seek((int) importDirectoryFileOffset, SeekOrigin.Begin);
+				ImportDirectory.Write(writer);
+			}
 
-                if (rva >= sectionStart && rva < sectionEnd)
-                {
-                    return m_sectionHeaders[i];
-                }
-            }
+			// Update PE checksum:
+			writer.Seek(0, SeekOrigin.Begin);
+			var fileBytes = new byte[writer.BaseStream.Length];
+			writer.BaseStream.Read(fileBytes, 0, (int) writer.BaseStream.Length);
+			var checksumOffset = PEHeaderOffset + PEHeader.ChecksumRelativeAddress;
+			var checksum = PortableExecutableUtils.CalculcateChecksum(fileBytes, checksumOffset);
+			writer.Seek((int) checksumOffset, SeekOrigin.Begin);
+			writer.Write(checksum);
+			writer.Flush();
+		}
 
-            return null;
-        }
+		public PESectionHeader FindSectionByRVA(uint rva)
+		{
+			for (var i = 0; i < SectionHeaders.Count; i++)
+			{
+				var sectionStart = SectionHeaders[i].VirtualAdress;
+				var sectionEnd = sectionStart + SectionHeaders[i].VirtualSize;
 
-        public uint GetOffsetFromRVA(uint rva)
-        {
-            PESectionHeader sectionHeader = FindSectionByRVA(rva);
-            if (sectionHeader == null)
-            {
-                throw new Exception("Invalid PE file");
-            }
+				if (rva >= sectionStart && rva < sectionEnd)
+					return SectionHeaders[i];
+			}
 
-            uint index = (sectionHeader.PointerToRawData + (rva - sectionHeader.VirtualAdress));
-            return index;
-        }
+			return null;
+		}
 
-        public uint GetRVAFromAddressInSection(PESectionHeader sectionHeader, uint addressInSection)
-        {
-            uint rva = addressInSection + sectionHeader.VirtualAdress;
-            return rva;
-        }
+		public uint GetOffsetFromRVA(uint rva)
+		{
+			var sectionHeader = FindSectionByRVA(rva);
+			if (sectionHeader == null)
+				throw new Exception("Invalid PE file");
 
-        public uint GetRVAFromOffset(PESectionHeader sectionHeader, uint offset)
-        {
-            uint rva = offset + sectionHeader.VirtualAdress - sectionHeader.PointerToRawData;
-            return rva;
-        }
+			var index = (sectionHeader.PointerToRawData + (rva - sectionHeader.VirtualAdress));
+			return index;
+		}
 
-        public uint GetAddressInSectionFromRVA(PESectionHeader sectionHeader, uint rva)
-        {
-            uint addressInSection = rva - sectionHeader.VirtualAdress;
-            return addressInSection;
-        }
+		public uint GetRVAFromAddressInSection(PESectionHeader sectionHeader, uint addressInSection)
+		{
+			var rva = addressInSection + sectionHeader.VirtualAdress;
+			return rva;
+		}
 
-        public DosHeader DosHeader
-        {
-            get
-            {
-                return m_dosHeader;
-            }
-        }
+		public uint GetRVAFromOffset(PESectionHeader sectionHeader, uint offset)
+		{
+			var rva = offset + sectionHeader.VirtualAdress - sectionHeader.PointerToRawData;
+			return rva;
+		}
 
-        public CoffHeader CoffHeader
-        {
-            get
-            {
-                return m_coffHeader;
-            }
-        }
+		public static uint GetAddressInSectionFromRVA(PESectionHeader sectionHeader, uint rva)
+		{
+			var addressInSection = rva - sectionHeader.VirtualAdress;
+			return addressInSection;
+		}
 
-        public PEHeader PEHeader
-        {
-            get
-            {
-                return m_peHeader;
-            }
-        }
+		public DOSHeader DOSHeader { get; private set; }
 
-        public List<byte[]> Sections
-        {
-            get
-            {
-                return m_sections;
-            }
-        }
+		public COFFHeader COFFHeader { get; private set; }
 
-        public List<PESectionHeader> SectionHeaders
-        {
-            get
-            {
-                return m_sectionHeaders;
-            }
-        }
+		public PEHeader PEHeader { get; private set; }
 
-        public uint PEHeaderOffset
-        {
-            get
-            {
-                return m_peHeaderOffset;
-            }
-        }
+		public List<byte[]> Sections { get; private set; }
 
-        public ImportDirectory ImportDirectory
-        {
-            get
-            {
-                return m_importDirectory;
-            }
-        }
+		public List<PESectionHeader> SectionHeaders { get; private set; }
 
-        public static void WritePortableExecutable(PortableExecutableInfo peInfo, string path)
-        {
-            FileSystemUtils.ClearReadOnlyAttribute(path);
-            FileStream stream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite);
-            WritePortableExecutable(peInfo, stream);
-            stream.Close();
-        }
+		public uint PEHeaderOffset { get; private set; }
 
-        public static void WritePortableExecutable(PortableExecutableInfo peInfo, Stream stream)
-        {
-            BinaryWriter writer = new BinaryWriter(stream);
-            peInfo.WritePortableExecutable(writer);
-            writer.Close();
-        }
-    }
+		public ImportDirectory ImportDirectory { get; private set; }
+
+		public static void WritePortableExecutable(PortableExecutableInfo peInfo, string path)
+		{
+			FileSystemUtils.ClearReadOnlyAttribute(path);
+			var stream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite);
+			WritePortableExecutable(peInfo, stream);
+			stream.Close();
+		}
+
+		public static void WritePortableExecutable(PortableExecutableInfo peInfo, Stream stream)
+		{
+			var writer = new BinaryWriter(stream);
+			peInfo.WritePortableExecutable(writer);
+			writer.Close();
+		}
+	}
 }

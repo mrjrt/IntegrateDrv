@@ -1,88 +1,78 @@
 using System;
-using System.Collections;
 using System.IO;
-using System.Text;
-using System.Collections.Generic;
 
-namespace Utilities
+namespace IntegrateDrv.Utilities.FileSystem
 {
-	public class FileSystemUtils
+	public static class FileSystemUtils
 	{
-        public static bool IsDirectoryExist(string path)
-        {
-            DirectoryInfo dir = new DirectoryInfo(path);
-            return dir.Exists;
-        }
+		public static bool IsDirectoryExist(string path)
+		{
+			var dir = new DirectoryInfo(path);
+			return dir.Exists;
+		}
 
-        public static bool IsFileExist(string path)
-        {
-            return File.Exists(path);
-        }
+		public static bool IsFileExist(string path)
+		{
+			return File.Exists(path);
+		}
 
-        public static void CreateDirectory(string path)
-        {
-            Directory.CreateDirectory(path);
-        }
+		public static void CreateDirectory(string path)
+		{
+			Directory.CreateDirectory(path);
+		}
 
-        /// <summary>
-        /// This Method does not support files with length over 4GB
-        /// </summary>
+		/// <summary>
+		/// This Method does not support files with length over 4GB
+		/// </summary>
 		public static byte[] ReadFile(string path)
 		{
-			FileStream fileStream = new FileStream(path,FileMode.Open, FileAccess.Read);
-			int fileLength = Convert.ToInt32(fileStream.Length);
-			byte[] fileBytes = new byte[fileLength];
+			var fileStream = new FileStream(path,FileMode.Open, FileAccess.Read);
+			var fileLength = Convert.ToInt32(fileStream.Length);
+			var fileBytes = new byte[fileLength];
 
 			fileStream.Read(fileBytes,0,fileLength);
-            
+			
 			fileStream.Close();
 			return fileBytes;
 		}
 
-        public static void ClearReadOnlyAttribute(string path)
-        {
-            FileInfo file = new FileInfo(path);
-            if (file.Exists)
-            {
-                file.IsReadOnly = false;
-            }
-        }
+		public static void ClearReadOnlyAttribute(string path)
+		{
+			var file = new FileInfo(path);
+			if (file.Exists)
+			{
+				file.IsReadOnly = false;
+			}
+		}
 
-        public static void WriteFile(string path, byte[] bytes)
-        {
-            WriteFile(path, bytes, FileMode.Create);
-        }
+		public static void WriteFile(string path, byte[] bytes)
+		{
+			WriteFile(path, bytes, FileMode.Create);
+		}
 
-        public static void WriteFile(string path, byte[] bytes, FileMode fileMode)
-        {
-            FileInfo file = new FileInfo(path);
+		private static void WriteFile(string path, byte[] bytes, FileMode fileMode)
+		{
+			var file = new FileInfo(path);
 
-            FileStream stream = file.Open(fileMode, FileAccess.Write);
-            stream.Write(bytes, 0, bytes.Length);
-            stream.Close();
-        }
+			var stream = file.Open(fileMode, FileAccess.Write);
+			stream.Write(bytes, 0, bytes.Length);
+			stream.Close();
+		}
 
-        /// <summary>
-        /// Extracts file / directory name from path
-        /// </summary>
-        public static string GetNameFromPath(string path)
-        {
-            string[] parts = path.Split('\\');
-            if (parts.Length > 0)
-            {
-                if (parts[parts.Length - 1] == String.Empty)
-                {
-                    return parts[parts.Length - 2];
-                }
-                else
-                {
-                    return parts[parts.Length - 1];
-                }
-            }
-            else
-            {
-                return String.Empty;
-            }
-        }
+		/// <summary>
+		/// Extracts file / directory name from path
+		/// </summary>
+		public static string GetNameFromPath(string path)
+		{
+			var parts = path.Split('\\');
+			if (parts.Length > 0)
+			{
+				return parts[parts.Length - 1] == string.Empty
+					? parts[parts.Length - 2]
+					: parts[parts.Length - 1];
+			}
+
+			return string.Empty;
+		}
 	}
 }

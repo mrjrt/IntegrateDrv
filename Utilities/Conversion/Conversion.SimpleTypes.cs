@@ -1,22 +1,17 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Web;
 
-namespace Utilities
+namespace IntegrateDrv.Utilities.Conversion
 {
-	public partial class Conversion
+	public static class Conversion
 	{
-        public static int ToInt32(object obj)
-        {
-            return ToInt32(obj, 0);
-        }
+		public static int ToInt32(object obj)
+		{
+			return ToInt32(obj, 0);
+		}
 
 		public static int ToInt32(object obj, int defaultValue)
 		{
-            int result = defaultValue;
+			var result = defaultValue;
 			if (obj != null)
 			{
 				try

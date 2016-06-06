@@ -1,68 +1,51 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Microsoft.Win32;
-using Utilities;
 
-namespace IntegrateDrv
+namespace IntegrateDrv.ExportedRegistry
 {
-    public class ExportedRegistryKey
-    {
-        private string m_keyName = String.Empty; // full key name
-        private ExportedRegistry m_registry;
+	public class ExportedRegistryKey
+	{
+		private readonly string _keyName = string.Empty; // full key name
+		private readonly ExportedRegistryINI _registry;
 
-        public ExportedRegistryKey(ExportedRegistry registry, string keyName)
-        {
-            m_registry = registry;
-            m_keyName = keyName;
-        }
+		public ExportedRegistryKey(ExportedRegistryINI registry, string keyName)
+		{
+			_registry = registry;
+			_keyName = keyName;
+		}
 
-        public ExportedRegistryKey OpenSubKey(string subKeyName)
-        {
-            return new ExportedRegistryKey(m_registry, m_keyName + @"\" + subKeyName);
-        }
+		public ExportedRegistryKey OpenSubKey(string subKeyName)
+		{
+			return new ExportedRegistryKey(_registry, _keyName + @"\" + subKeyName);
+		}
 
-        public object GetValue(string name)
-        {
-            return GetValue(name, null);
-        }
+		public object GetValue(string name, object defaultValue)
+		{
+			var result = _registry.GetValue(_keyName, name) ?? defaultValue;
+			return result;
+		}
 
-        public object GetValue(string name, object defaultValue)
-        {
-            object result = m_registry.GetValue(m_keyName, name);
-            if (result == null)
-            {
-                result = defaultValue;
-            }
-            return result;
-        }
+		public IEnumerable<string> GetSubKeyNames()
+		{
+			var result = new List<string>();
+			foreach (var sectionName in _registry.SectionNames)
+			{
+				if (sectionName.StartsWith(_keyName + @"\", StringComparison.InvariantCultureIgnoreCase))
+				{
+					var subKeyName = sectionName.Substring(_keyName.Length + 1).Split('\\')[0];
+					if (!result.Contains(subKeyName))
+						result.Add(subKeyName);
+				}
+			}
+			return result.ToArray();
+		}
 
-        public string[] GetSubKeyNames()
-        {
-            List<string> result = new List<string>();
-            foreach (string sectionName in m_registry.SectionNames)
-            { 
-                if (sectionName.StartsWith(m_keyName + @"\", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    string subKeyName = sectionName.Substring(m_keyName.Length + 1).Split('\\')[0];
-                    if (!result.Contains(subKeyName))
-                    {
-                        result.Add(subKeyName);
-                    }
-                }
-            }
-            return result.ToArray();
-        }
-
-        /// <summary>
-        /// Full key name
-        /// </summary>
-        public string Name
-        {
-            get
-            {
-                return m_keyName;
-            }
-        }
-    }
+		/// <summary>
+		/// Full key name
+		/// </summary>
+		public string Name
+		{
+			get { return _keyName; }
+		}
+	}
 }

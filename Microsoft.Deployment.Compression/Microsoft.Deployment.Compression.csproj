@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{E64E2430-3F1D-4489-A548-23B426B98173}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Microsoft.Deployment.Compression</RootNamespace>
+    <AssemblyName>Microsoft.Deployment.Compression</AssemblyName>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ArchiveException.cs" />
+    <Compile Include="ArchiveFileInfo.cs" />
+    <Compile Include="ArchiveFileStreamContext.cs" />
+    <Compile Include="ArchiveInfo.cs" />
+    <Compile Include="ArchiveProgressEventArgs.cs" />
+    <Compile Include="ArchiveProgressType.cs" />
+    <Compile Include="BasicUnpackStreamContext.cs" />
+    <Compile Include="Cab\CabEngine.cs" />
+    <Compile Include="Cab\CabException.cs" />
+    <Compile Include="Cab\CabFileInfo.cs" />
+    <Compile Include="Cab\CabInfo.cs" />
+    <Compile Include="Cab\CabPacker.cs" />
+    <Compile Include="Cab\CabUnpacker.cs" />
+    <Compile Include="Cab\CabWorker.cs" />
+    <Compile Include="Cab\HandleManager.cs" />
+    <Compile Include="Cab\NativeMethods.cs" />
+    <Compile Include="CargoStream.cs" />
+    <Compile Include="CompressionEngine.cs" />
+    <Compile Include="CompressionLevel.cs" />
+    <Compile Include="DuplicateStream.cs" />
+    <Compile Include="IPackStreamContext.cs" />
+    <Compile Include="IUnpackStreamContext.cs" />
+    <Compile Include="OffsetStream.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SafeNativeMethods.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Cab\Errors.resources" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Cab\Errors.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

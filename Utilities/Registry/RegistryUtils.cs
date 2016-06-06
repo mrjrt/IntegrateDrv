@@ -1,32 +1,31 @@
-using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
+using IntegrateDrv.Utilities.Security;
 
-namespace Utilities
+namespace IntegrateDrv.Utilities.Registry
 {
-    public class RegistryUtils
-    {
-        public const uint HKEY_USERS = 0x80000003;
+	public static class RegistryUtils
+	{
+		// ReSharper disable once InconsistentNaming
+		public const uint HKEY_USERS = 0x80000003;
 
-        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern int RegLoadKey(uint hKey, string lpSubKey, string lpFile);
+		[DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+		public static extern int RegLoadKey(uint hKey, string lpSubKey, string lpFile);
 
-        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern int RegUnLoadKey(uint hKey, string lpSubKey);
+		[DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+		public static extern int RegUnLoadKey(uint hKey, string lpSubKey);
 
-        public static int LoadHive(string subkey, string hivePath)
-        {
-            SecurityUtils.ObtainBackupRestorePrivileges();
-            
-            int result = RegLoadKey(HKEY_USERS, subkey, hivePath);
-            return result;
-        }
+		public static int LoadHive(string subkey, string hivePath)
+		{
+			SecurityUtils.ObtainBackupRestorePrivileges();
+			
+			var result = RegLoadKey(HKEY_USERS, subkey, hivePath);
+			return result;
+		}
 
-        public static int UnloadHive(string subkey)
-        {
-            SecurityUtils.ObtainBackupRestorePrivileges();
-            return RegUnLoadKey(HKEY_USERS, subkey);
-        }
-    }
+		public static int UnloadHive(string subkey)
+		{
+			SecurityUtils.ObtainBackupRestorePrivileges();
+			return RegUnLoadKey(HKEY_USERS, subkey);
+		}
+	}
 }

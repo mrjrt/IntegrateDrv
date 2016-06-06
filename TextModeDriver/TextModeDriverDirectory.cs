@@ -1,47 +1,26 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Utilities;
+using IntegrateDrv.Utilities.FileSystem;
 
-namespace IntegrateDrv
+namespace IntegrateDrv.TextModeDriver
 {
-    public class TextModeDriverDirectory
-    {
-        private string m_path = String.Empty;
-        private TextModeDriverSetupINIFile m_descriptor;
-        
-        public TextModeDriverDirectory(string path)
-        {
-            m_path = path;
-            if (this.ContainsOEMSetupFile)
-            {
-                m_descriptor = new TextModeDriverSetupINIFile();
-                m_descriptor.ReadFromDirectory(path);
-            }
-        }
+	public class TextModeDriverDirectory
+	{
+		public TextModeDriverDirectory(string path)
+		{
+			Path = path;
+			if (ContainsOEMSetupFile)
+			{
+				TextModeDriverSetupINI = new TextModeDriverSetupINIFile();
+				TextModeDriverSetupINI.ReadFromDirectory(path);
+			}
+		}
 
-        public bool ContainsOEMSetupFile
-        {
-            get
-            { 
-                return FileSystemUtils.IsFileExist(m_path + "txtsetup.oem");
-            }
-        }
+		public bool ContainsOEMSetupFile
+		{
+			get { return FileSystemUtils.IsFileExist(Path + "txtsetup.oem"); }
+		}
 
-        public TextModeDriverSetupINIFile TextModeDriverSetupINI
-        {
-            get
-            {
-                return m_descriptor;
-            }
-        }
+		public TextModeDriverSetupINIFile TextModeDriverSetupINI { get; private set; }
 
-        public string Path
-        {
-            get
-            {
-                return m_path;
-            }
-        }
-    }
+		public string Path { get; private set; }
+	}
 }

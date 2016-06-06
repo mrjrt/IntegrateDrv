@@ -1,23 +1,21 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
+using IntegrateDrv.BaseClasses;
 
-namespace IntegrateDrv
+namespace IntegrateDrv.WindowsDirectory
 {
-    public class NetTCPIPINFFile : ServiceINIFile
-    {
-        public NetTCPIPINFFile() : base("nettcpip.inf")
-        {
-        }
+	public class NetTCPIPINFFile : ServiceINIFile
+	{
+		public NetTCPIPINFFile() : base("nettcpip.inf")
+		{
+		}
 
-        public void SetTCPIPToBootStart()
-        {
-            SetServiceToBootStart("Install.AddService.TCPIP");
-        }
+		public void SetTCPIPToBootStart()
+		{
+			SetServiceToBootStart("Install.AddService.TCPIP");
+		}
 
-        public void SetIPSecToBootStart()
-        {
-            SetServiceToBootStart("Install.AddService.IPSEC");
-        }
-    }
+		public void SetIPSecToBootStart()
+		{
+			SetServiceToBootStart("Install.AddService.IPSEC");
+		}
+	}
 }
