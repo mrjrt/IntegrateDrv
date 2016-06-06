@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using IntegrateDrv.DeviceService;
 using IntegrateDrv.Integrators;
@@ -23,10 +24,12 @@ namespace IntegrateDrv
 			bool useLocalHardwareConfig;
 			string enumExportPath;
 			bool preconfigure;
-			bool staticIP;
+			IPAddress staticIP;
+			IPAddress staticSubnetMask;
+			IPAddress staticGateway;
 			bool usbBoot;
 
-			var parseSuccess = ParseCommandLineSwitches(args, out installation, out textModeDriverDirectories, out pnpDriverDirectories, out useLocalHardwareConfig, out enumExportPath, out preconfigure, out staticIP, out usbBoot);
+			var parseSuccess = ParseCommandLineSwitches(args, out installation, out textModeDriverDirectories, out pnpDriverDirectories, out useLocalHardwareConfig, out enumExportPath, out preconfigure, out staticIP, out staticSubnetMask, out staticGateway, out usbBoot);
 			if (!parseSuccess)
 				// parser was already supposed to print an error meesage;
 				return;
@@ -81,7 +84,7 @@ namespace IntegrateDrv
 				Console.WriteLine("Network adapter has been added, adding TCP/IP:");
 				var integrator = new TCPIPIntegrator(installation, netDeviceServices);
 				integrator.SetTCPIPBoot();
-				integrator.AssignIPAddressToNetDeviceServices(staticIP);
+				integrator.AssignIPAddressToNetDeviceServices(staticIP, staticSubnetMask, staticGateway);
 			}
 
 			if (usbBoot)
@@ -106,7 +109,7 @@ namespace IntegrateDrv
 		/// <summary>
 		/// return false if args are invalid
 		/// </summary>
-		private static bool ParseCommandLineSwitches(string[] args, out WindowsInstallation installation, out List<TextModeDriverDirectory> textModeDriverDirectories, out List<PNPDriverDirectory> pnpDriverDirectories, out bool useLocalHardwareConfig, out string enumExportPath, out bool preconfigure, out bool staticIP, out bool usbBoot)
+		private static bool ParseCommandLineSwitches(string[] args, out WindowsInstallation installation, out List<TextModeDriverDirectory> textModeDriverDirectories, out List<PNPDriverDirectory> pnpDriverDirectories, out bool useLocalHardwareConfig, out string enumExportPath, out bool preconfigure, out IPAddress staticIP, out IPAddress staticSubnetMask, out IPAddress staticGateway, out bool usbBoot)
 		{
 			installation = null;
 			textModeDriverDirectories = new List<TextModeDriverDirectory>();
@@ -114,7 +117,9 @@ namespace IntegrateDrv
 			enumExportPath = string.Empty;
 			useLocalHardwareConfig = false;
 			preconfigure = false;
-			staticIP = true;
+			staticIP = null;
+			staticSubnetMask = null;
+			staticGateway = null;
 			usbBoot = false;
 
 			var pnpDriverPaths = new List<string>();
@@ -185,7 +190,49 @@ namespace IntegrateDrv
 					}
 					case "dhcp":
 					{
-						staticIP = false;
+						staticIP = null;
+						break;
+					}
+					case "ip":
+					{
+						if (!IPAddress.TryParse(switchParameter, out staticIP))
+						{
+							ShowHelp();
+							return false;
+						}
+						staticIP = IPAddress.Parse(switchParameter);
+						break;
+					}
+					case "subnet":
+					{
+						int subnet;
+
+						if (!int.TryParse(switchParameter, out subnet) || subnet > 32 || subnet < 0)
+						{
+							ShowHelp();
+							return false;
+						}
+
+						// Calculate a subnet mask from the CIDR
+						var subnetMask = 0xFFFFFFFF ^ (1 << 32 - subnet) - 1;
+
+						// Then flip the bytes and make an IP address
+						var b1 = (subnetMask >> 0) & 0xff;
+						var b2 = (subnetMask >> 8) & 0xff;
+						var b3 = (subnetMask >> 16) & 0xff;
+						var b4 = (subnetMask >> 24) & 0xff;
+						staticSubnetMask = new IPAddress(b1 << 24 | b2 << 16 | b3 << 8 | b4 << 0);
+						
+						break;
+					}
+					case "gateway":
+					{
+						if (!IPAddress.TryParse(switchParameter, out staticGateway))
+						{
+							ShowHelp();
+							return false;
+						}
+						staticGateway = IPAddress.Parse(switchParameter);
 						break;
 					}
 					case "usbboot":

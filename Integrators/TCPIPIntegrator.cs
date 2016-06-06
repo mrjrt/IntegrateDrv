@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using IntegrateDrv.DeviceService;
 using IntegrateDrv.Interfaces;
-using IntegrateDrv.Utilities.Conversion;
 using IntegrateDrv.Utilities.Strings;
 using IntegrateDrv.WindowsDirectory;
 using Microsoft.Win32;
@@ -139,37 +139,31 @@ namespace IntegrateDrv.Integrators
 			}
 		}
 
-		public void AssignIPAddressToNetDeviceServices(bool staticIP)
+		public void AssignIPAddressToNetDeviceServices(IPAddress staticIP, IPAddress staticSubnet, IPAddress staticGateway)
 		{
 			foreach (var netDeviceService in _netDeviceServices)
-				AssignIPAddressToNetDeviceService(netDeviceService, staticIP);
+				AssignIPAddressToNetDeviceService(netDeviceService, staticIP, staticSubnet, staticGateway);
 		}
 
-		private void AssignIPAddressToNetDeviceService(NetworkDeviceService netDeviceService, bool staticIP)
+		private void AssignIPAddressToNetDeviceService(NetworkDeviceService netDeviceService, IPAddress staticIP, IPAddress staticSubnet, IPAddress staticGateway)
 		{
-			string ipAddress;
-			string subnetMask;
-			string defaultGateway;
-			if (staticIP)
+			if (null == staticIP || null == staticSubnet || null == staticGateway)
 			{
 				Console.WriteLine("Please select TCP/IP settings for '" + netDeviceService.DeviceDescription + "':");
 				Console.WriteLine("* Pressing Enter will default to 192.168.1.50 / 255.255.255.0 / 192.168.1.1");
-				ipAddress = ReadValidIPv4Address("IP Address", "192.168.1.50");
-				subnetMask = ReadValidIPv4Address("Subnet Mask", "255.255.255.0");
-				defaultGateway = ReadValidIPv4Address("Default Gateway", "192.168.1.1");
-			}
-			else
-			{
-				ipAddress = "0.0.0.0";
-				subnetMask = "0.0.0.0";
-				defaultGateway = string.Empty;
+				if (null == staticIP)
+					staticIP = ReadValidIPv4Address("IP Address", new IPAddress(0xC0A832));             // 192.168.1.50
+				if (null == staticSubnet)
+					staticSubnet = ReadValidIPv4Address("Subnet Mask", new IPAddress(0xFFFFFF00));      // 255.255.255.0
+				if (null == staticGateway)
+					staticGateway = ReadValidIPv4Address("Default Gateway", new IPAddress(0xC0A80101)); // 192.168.1.1
 			}
 
-			AssignIPAddressToNetDeviceService(netDeviceService, _installation.SetupRegistryHive, ipAddress, subnetMask, defaultGateway);
-			AssignIPAddressToNetDeviceService(netDeviceService, _installation.HiveSystemInf, ipAddress, subnetMask, defaultGateway);
+			AssignIPAddressToNetDeviceService(netDeviceService, _installation.SetupRegistryHive, staticIP, staticSubnet, staticGateway);
+			AssignIPAddressToNetDeviceService(netDeviceService, _installation.HiveSystemInf, staticIP, staticSubnet, staticGateway);
 		}
-		
-		private static void AssignIPAddressToNetDeviceService(NetworkDeviceService netDeviceService, ISystemRegistryHive systemRegistryHive,  string ipAddress, string subnetMask, string defaultGateway)
+
+		private static void AssignIPAddressToNetDeviceService(NetworkDeviceService netDeviceService, ISystemRegistryHive systemRegistryHive, IPAddress ipAddress, IPAddress subnetMask, IPAddress defaultGateway)
 		{
 			var netCfgInstanceID = netDeviceService.NetCfgInstanceID;
 
@@ -181,10 +175,10 @@ namespace IntegrateDrv.Integrators
 			systemRegistryHive.SetServiceRegistryKey("Tcpip", adapterKeyName, "IpConfig", RegistryValueKind.MultiString, new[] { adapterIPConfig });
 
 			// DefaultGateway is not necessary for most people, but can ease the installation for people with complex networks
-			systemRegistryHive.SetServiceRegistryKey("Tcpip", interfaceKeyName, "DefaultGateway", RegistryValueKind.MultiString, new[] { defaultGateway });
+			systemRegistryHive.SetServiceRegistryKey("Tcpip", interfaceKeyName, "DefaultGateway", RegistryValueKind.MultiString, new[] { defaultGateway.ToString() });
 			// Extracurricular note: it's possible to use more than one IP address, but you have to specify subnet mask for it as well.
-			systemRegistryHive.SetServiceRegistryKey("Tcpip", interfaceKeyName, "IPAddress", RegistryValueKind.MultiString, new[] { ipAddress });
-			systemRegistryHive.SetServiceRegistryKey("Tcpip", interfaceKeyName, "SubnetMask", RegistryValueKind.MultiString, new[] { subnetMask });
+			systemRegistryHive.SetServiceRegistryKey("Tcpip", interfaceKeyName, "IPAddress", RegistryValueKind.MultiString, new[] { ipAddress.ToString() });
+			systemRegistryHive.SetServiceRegistryKey("Tcpip", interfaceKeyName, "SubnetMask", RegistryValueKind.MultiString, new[] { subnetMask.ToString() });
 
 			// Note related to GUI mode:
 			// We already bind the device class instance to NetCfgInstanceID, and that's all that's necessary for TCP/IP to work during text-mode.
@@ -199,7 +193,7 @@ namespace IntegrateDrv.Integrators
 			systemRegistryHive.SetServiceRegistryKey("Tcpip", "Linkage", "Route", RegistryValueKind.MultiString, new[] { QuotedStringUtils.Quote(netCfgInstanceID) });
 		}
 
-		private static string ReadValidIPv4Address(string name, string defaultAddress)
+		private static IPAddress ReadValidIPv4Address(string name, IPAddress defaultAddress)
 		{
 			var retry = 2;
 			while (retry > 0)
@@ -208,46 +202,24 @@ namespace IntegrateDrv.Integrators
 				var address = Console.ReadLine();
 				if (address.Trim() == string.Empty)
 				{
-					address = defaultAddress;
 					Console.WriteLine("Defaulting to " + defaultAddress);
-					return address;
+					return defaultAddress;
 				}
 
-				if (!ValidadeAddress(address))
+				IPAddress parsedIPAddress;
+				if (!IPAddress.TryParse(address, out parsedIPAddress))
 				{
 					Console.WriteLine("Invalid " + name + " detected. you have to use IPv4!");
 					retry--;
 				}
 				else
-					return address;
+					return parsedIPAddress;
 			}
 
 			Console.WriteLine("Invalid " + name + " detected, aborting!");
 			Program.Exit();
 
 			return defaultAddress;
-		}
-
-		// We won't use IPAddress.Parse because it's a dependency we do not want or need
-		private static bool ValidadeAddress(string address)
-		{
-			var components = address.Split('.');
-			if (components.Length != 4)
-				return false;
-
-			var arg1 = Conversion.ToInt32(components[0], -1);
-			var arg2 = Conversion.ToInt32(components[1], -1);
-			var arg3 = Conversion.ToInt32(components[2], -1);
-			var arg4 = Conversion.ToInt32(components[3], -1);
-			return
-				arg1 >= 0 &&
-				arg2 >= 0 &&
-				arg3 >= 0 &&
-				arg4 >= 0 &&
-				arg1 <= 255 &&
-				arg2 <= 255 &&
-				arg3 <= 255 &&
-				arg4 <= 255;
 		}
 	}
 }
